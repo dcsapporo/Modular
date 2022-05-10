@@ -38,7 +38,7 @@ file_002=no
 [FILE_INFO]
 file_000=D101-dual_envelope.c
 file_001=time_map.h
-file_002=C:\Program Files\SourceBoost\Lib\flash.pic16.lib
+file_002=C:\Program Files(x86)\SourceBoost\Lib\flash.pic16.lib
 [SUITE_INFO]
 suite_guid={973D2266-4101-439F-9670-68EE7EE87BCC}
 suite_state=
