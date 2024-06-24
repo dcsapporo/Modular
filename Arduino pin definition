@@ -1,0 +1,20 @@
+// Pin definitions for Arduino Nano
+#define MODE2_SW_ADSR A0  // Analog pin A0
+#define MODE2_SW_LFO A1   // Analog pin A1
+#define SUSTAIN1_POT A2   // Analog pin A2
+#define GATE1_IN 3        // Digital pin 3
+#define RELEASE1_POT A3   // Analog pin A3
+#define GATE2_IN 5        // Digital pin 5
+#define ATTACK1_POT A4    // Analog pin A4
+#define DECAY1_POT A5     // Analog pin A5
+
+#define ATTACK2_POT A6    // Analog pin A6
+#define DECAY2_POT A7     // Analog pin A7
+#define SUSTAIN2_POT A8   // Analog pin A8
+#define RELEASE2_POT A9   // Analog pin A9
+#define MODE1_SW_ADSR 4   // Digital pin 4
+#define MODE1_SW_LFO 6    // Digital pin 6
+#define TEST_OUT 7        // Digital pin 7
+#define DAC_CS 8          // Digital pin 8
+#define DAC_CLK 13        // Digital pin 13 (SPI Clock)
+#define DAC_MOSI 11       // Digital pin 11 (SPI MOSI)
