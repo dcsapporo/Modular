@@ -1,0 +1,139 @@
+#include <SPI.h>
+
+// Constants
+#define MAX_LEVEL 65535
+#define MODE_ADSR 0
+#define MODE_AR 1
+#define MODE_LFO 2
+
+#define ENV_IDLE 0
+#define ENV_ATTACK 1
+#define ENV_DECAY 2
+#define ENV_SUSTAIN 3
+#define ENV_RELEASE 4
+
+unsigned char env_mode[2];  // the ADSR, AR, LFO mode
+unsigned char env_state[2];  // the current ADSR state
+int env_level[2];  // the current envelope level
+int attack[2];  // step sizes for attack
+int decay[2];  // step sizes for decay
+int sustain[2];  // levels for sustain
+int release[2];  // step sizes for release
+unsigned char gate_state[2];  // the gate state
+
+void setup() {
+  // Set pin modes
+  pinMode(MODE2_SW_ADSR, INPUT_PULLUP);
+  pinMode(MODE2_SW_LFO, INPUT_PULLUP);
+  pinMode(GATE1_IN, INPUT_PULLUP);
+  pinMode(GATE2_IN, INPUT_PULLUP);
+  pinMode(MODE1_SW_ADSR, INPUT_PULLUP);
+  pinMode(MODE1_SW_LFO, INPUT_PULLUP);
+  pinMode(TEST_OUT, OUTPUT);
+  pinMode(DAC_CS, OUTPUT);
+  digitalWrite(DAC_CS, HIGH);  // DAC CS is active low
+
+  // Initialize SPI
+  SPI.begin();
+  SPI.setClockDivider(SPI_CLOCK_DIV16);  // Set SPI speed
+
+  // Initialize envelope arrays
+  for (int i = 0; i < 2; i++) {
+    env_mode[i] = MODE_ADSR;
+    env_state[i] = ENV_IDLE;
+    env_level[i] = 0;
+    attack[i] = 0;
+    decay[i] = 0;
+    sustain[i] = 0;
+    release[i] = 0;
+    gate_state[i] = 0;
+  }
+}
+
+void loop() {
+  gate_sense();
+  envelope_update(0);
+  envelope_update(1);
+}
+
+void gate_sense() {
+  // Read gate inputs
+  int gate1 = digitalRead(GATE1_IN);
+  int gate2 = digitalRead(GATE2_IN);
+
+  // Handle gate input for channel 0
+  if (gate1 == LOW && gate_state[0] == 0) {
+    gate_state[0] = 1;
+    env_state[0] = ENV_ATTACK;
+  } else if (gate1 == HIGH && gate_state[0] == 1) {
+    gate_state[0] = 0;
+    if (env_mode[0] == MODE_ADSR) env_state[0] = ENV_RELEASE;
+  }
+
+  // Handle gate input for channel 1
+  if (gate2 == LOW && gate_state[1] == 0) {
+    gate_state[1] = 1;
+    env_state[1] = ENV_ATTACK;
+  } else if (gate2 == HIGH && gate_state[1] == 1) {
+    gate_state[1] = 0;
+    if (env_mode[1] == MODE_ADSR) env_state[1] = ENV_RELEASE;
+  }
+}
+
+void envelope_update(int chan) {
+  if (chan > 1) return;
+
+  // Update envelope state
+  switch (env_state[chan]) {
+    case ENV_ATTACK:
+      env_level[chan] += attack[chan];
+      if (env_level[chan] > MAX_LEVEL) {
+        env_level[chan] = MAX_LEVEL;
+        if (env_mode[chan] == MODE_ADSR) {
+          env_state[chan] = ENV_DECAY;
+        } else {
+          env_state[chan] = ENV_RELEASE;
+        }
+      }
+      break;
+
+    case ENV_DECAY:
+      env_level[chan] -= decay[chan];
+      if (env_level[chan] < sustain[chan]) {
+        env_level[chan] = sustain[chan];
+        env_state[chan] = ENV_SUSTAIN;
+      }
+      break;
+
+    case ENV_SUSTAIN:
+      env_level[chan] = sustain[chan];
+      break;
+
+    case ENV_RELEASE:
+      env_level[chan] -= release[chan];
+      if (env_level[chan] < 0) {
+        env_level[chan] = 0;
+        env_state[chan] = ENV_IDLE;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  // Output the envelope level to the DAC
+  dac_output(chan, env_level[chan]);
+}
+
+void dac_output(int chan, int value) {
+  digitalWrite(DAC_CS, LOW);
+  SPI.transfer((value >> 8) & 0xFF);  // Send high byte
+  SPI.transfer(value & 0xFF);  // Send low byte
+  digitalWrite(DAC_CS, HIGH);
+}
+
+unsigned int time_lookup(unsigned char val) {
+  // Dummy implementation, replace with actual flash read if needed
+  // Example: return pgm_read_word_near(time_map + val);
+  return 0;  // Replace with actual lookup
+}
